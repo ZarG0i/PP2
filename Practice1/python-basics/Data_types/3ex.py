@@ -5,3 +5,10 @@ print(x)
 
 #display the data type of x:
 print(type(x)) 
+x = dict(name="Max", age=13)
+
+#display x:
+print(x)
+
+#display the data type of x:
+print(type(x)) 
