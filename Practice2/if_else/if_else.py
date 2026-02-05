@@ -1,38 +1,36 @@
-score = 25
+number = -5
+
+if number > 0:
+    print("The number is positive.")
+else:
+    print("The number is negative or zero.")
+
+num = 7
+
+if num % 2 == 0:
+    print("Even number")
+else:
+    print("Odd number")
+
+score = 85
 
 if score >= 90:
-  print("Grade: A")
-elif score >= 80:
-  print("Grade: B")
-elif score >= 70:
-  print("Grade: C")
-elif score >= 60:
-  print("Grade: D")
+    print("Grade: A")
+else:
+    print("Grade: B or lower")
 
-temperature = 28
+password = "abc123"
 
-if temperature >= 35:
-    print("Very hot")
-elif temperature >= 25:
-    print("Hot")
-elif temperature >= 15:
-    print("Warm")
-
-age = 14
-
-if age >= 18:
-    print("Adult")
-elif age >= 13:
-    print("Teenager")
-elif age >= 7:
-    print("Child")
+if password == "secret":
+    print("Access granted")
+else:
+    print("Access denied")
 
 
-salary = 120000
+a = 10
+b = 20
 
-if salary >= 200000:
-    print("High income")
-elif salary >= 100000:
-    print("Medium income")
-elif salary >= 50000:
-    print("Low income")
+if a > b:
+    print("a is greater than b")
+else:
+    print("a is not greater than b")
