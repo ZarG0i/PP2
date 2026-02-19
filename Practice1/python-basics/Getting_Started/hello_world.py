@@ -1,0 +1,6 @@
+print("Hello, World!")
+print("Hello, KBTU!")
+print("HI!")
+print("Hey!")
+print("nice!")
+print("Amazing!")
