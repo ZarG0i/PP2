@@ -1,0 +1,5 @@
+print("It's alright")
+print("He is called 'Johnny'")
+print('This is hilarious example')
+print('Hes name is  "Sasha"')
+print('First Text')
