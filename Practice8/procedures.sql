@@ -1,4 +1,4 @@
--- 🔹 Insert or update user
+
 CREATE OR REPLACE PROCEDURE upsert_user(u_name TEXT, u_phone TEXT)
 LANGUAGE plpgsql
 AS $$
@@ -14,7 +14,7 @@ END;
 $$;
 
 
--- 🔹 Insert many users
+
 CREATE OR REPLACE PROCEDURE insert_many_users(names TEXT[], phones TEXT[])
 LANGUAGE plpgsql
 AS $$
@@ -45,7 +45,7 @@ END;
 $$;
 
 
--- 🔹 Delete user
+
 CREATE OR REPLACE PROCEDURE delete_user(identifier TEXT)
 LANGUAGE plpgsql
 AS $$
