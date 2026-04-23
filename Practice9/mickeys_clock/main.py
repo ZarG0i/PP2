@@ -4,10 +4,10 @@ from clock import Clock
 pygame.init()
 
 screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Mickey Clock")
+pygame.display.set_caption("Clock")
 
-clock = pygame.time.Clock()
-mickey = Clock(screen)
+fps_clock = pygame.time.Clock()
+clock_ui = Clock(screen)
 
 running = True
 
@@ -16,9 +16,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    mickey.update()
+    clock_ui.update()
 
     pygame.display.flip()
-    clock.tick(1)  # update every second
+    fps_clock.tick(60)
 
 pygame.quit()

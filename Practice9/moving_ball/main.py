@@ -20,7 +20,7 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
                 ball.move(-20, 0)
-            elif event.key == pygame.K_RIGHT:
+            elif event.key == pygame.K_D:
                 ball.move(20, 0)
             elif event.key == pygame.K_UP:
                 ball.move(0, -20)

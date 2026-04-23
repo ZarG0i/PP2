@@ -1,7 +1,7 @@
 import pygame
 
 class Ball:
-    def __init__(self, x=300, y=200):
+    def __init__(self, x=400, y=300):
         self.x = x
         self.y = y
         self.radius = 25
@@ -14,7 +14,7 @@ class Ball:
         new_x = self.x + dx
         new_y = self.y + dy
 
-        # boundary check
+        
         if 0 + self.radius <= new_x <= self.width - self.radius:
             self.x = new_x
         if 0 + self.radius <= new_y <= self.height - self.radius:
