@@ -6,8 +6,8 @@ screen = pygame.display.set_mode((600, 400))
 font = pygame.font.Font(None, 36)
 
 playlist = [
-    "music/track1.wav.mp3",
-    "music/track2.wav.mp3"
+    "C:/Users/ZANGAR/Desktop/Practice9/music_player/music/track1.wav.mp3",
+    "C:/Users/ZANGAR/Desktop/Practice9/music_player/music/track2.wav.mp3"
 ]
 
 player = Player(playlist)
