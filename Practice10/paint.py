@@ -82,7 +82,7 @@ while running:
             if colors["blue"].collidepoint(mx, my):
                 color = BLUE
 
-            # start drawing
+            
             if my > 100:
                 drawing = True
                 start_pos = event.pos
@@ -95,7 +95,7 @@ while running:
                 end_pos = event.pos
                 last_pos = None
 
-                # RECTANGLE
+                
                 if tool == "rect":
                     pygame.draw.rect(
                         screen,
@@ -109,7 +109,7 @@ while running:
                         2,
                     )
 
-                # CIRCLE
+                
                 elif tool == "circle":
                     radius = int(math.hypot(
                         end_pos[0] - start_pos[0],

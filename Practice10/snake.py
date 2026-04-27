@@ -18,7 +18,7 @@ RED = (255,0,0)
 BLACK = (0,0,0)
 
 # Snake
-snake = [(100,100), (80,100), (60,100)]
+snake = [(300,300), (280,300), (260,100)]
 direction = (CELL, 0)
 
 # Food
@@ -32,7 +32,6 @@ def spawn_food():
 
 food = spawn_food()
 
-# Game variables
 score = 0
 level = 1
 speed = 8
@@ -47,26 +46,25 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # Controls
+        
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
+            if event.key == pygame.K_w:
                 direction = (0, -CELL)
-            elif event.key == pygame.K_DOWN:
+            elif event.key == pygame.K_s:
                 direction = (0, CELL)
-            elif event.key == pygame.K_LEFT:
+            elif event.key == pygame.K_a:
                 direction = (-CELL, 0)
-            elif event.key == pygame.K_RIGHT:
+            elif event.key == pygame.K_d:
                 direction = (CELL, 0)
 
     # Move snake
     head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
 
-    # Wall collision
     if (head[0] < 0 or head[0] >= WIDTH or
         head[1] < 0 or head[1] >= HEIGHT):
         running = False
 
-    # Self collision
+    
     if head in snake:
         running = False
 
