@@ -1,41 +1,40 @@
 import pygame
 
+class Button:
+    def __init__(self, text, x, y, w, h, color, font):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+        self.color = color
+        self.font = font
 
-def draw_button(screen,text,x,y,w,h):
+    def draw(self, screen):
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=5)
+        txt = self.font.render(self.text, True, (255, 255, 255))
+        screen.blit(txt, (self.rect.centerx - txt.get_width()//2, self.rect.centery - txt.get_height()//2))
 
-    font = pygame.font.SysFont("Arial",28)
+    def is_clicked(self, pos):
+        return self.rect.collidepoint(pos)
 
-    rect = pygame.Rect(x,y,w,h)
+def get_user_name(screen, font):
+    name = ""
+    input_active = True
+    while input_active:
+        screen.fill((200, 200, 200))
+        prompt = font.render("Enter Name and Press ENTER:", True, (0, 0, 0))
+        name_txt = font.render(name, True, (0, 0, 255))
+        screen.blit(prompt, (50, 200))
+        screen.blit(name_txt, (50, 250))
+        pygame.display.flip()
 
-    pygame.draw.rect(
-        screen,
-        (180,180,180),
-        rect,
-        border_radius=8
-    )
-
-    label = font.render(text,True,(0,0,0))
-
-    screen.blit(
-        label,
-        (x+15,y+8)
-    )
-
-    return rect
-
-
-def draw_center_text(screen,text,y,size):
-
-    font = pygame.font.SysFont("Arial",size)
-
-    img = font.render(
-        text,
-        True,
-        (0,0,0)
-    )
-
-    rect = img.get_rect(
-        center=(200,y)
-    )
-
-    screen.blit(img,rect)
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and name != "":
+                    input_active = False
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                else:
+                    if len(name) < 10:
+                        name += event.unicode
+            if event.type == pygame.QUIT:
+                pygame.quit(); exit()
+    return name

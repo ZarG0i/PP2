@@ -1,156 +1,244 @@
 import pygame
+import random
+import os
+import json
 import sys
 
-from Racer import RacerGame
-from ui import draw_button, draw_center_text
-from persistence import load_settings
+# --- ЖЕСТКАЯ ФИКСАЦИЯ РАБОЧЕЙ ДИРЕКТОРИИ ---
+# Находим путь к папке, где лежит этот файл main.py
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Принудительно заставляем Python работать внутри этой папки
+os.chdir(BASE_DIR)
 
+# Теперь все пути будут строиться строго внутри BASE_DIR
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+LEADERBOARD_FILE = os.path.join(BASE_DIR, "leaderboard.json")
+SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
+
+# --- ИНИЦИАЛИЗАЦИЯ PYGAME ---
 pygame.init()
+WIDTH, HEIGHT = 400, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Racer Pro: TSIS3 Fixed Paths")
 
-WIDTH=400
-HEIGHT=600
+clock = pygame.time.Clock()
+FPS = 60
 
-screen=pygame.display.set_mode((WIDTH,HEIGHT))
-pygame.display.set_caption("TSIS 3 Racer")
+# Цвета и шрифты
+RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+BLACK, WHITE, GRAY = (0, 0, 0), (255, 255, 255), (150, 150, 150)
+font = pygame.font.SysFont("Verdana", 20)
+big_font = pygame.font.SysFont("Verdana", 40)
 
-clock=pygame.time.Clock()
+# --- РАБОТА С ДАННЫМИ ---
+def load_json(path, default):
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(default, f, indent=4)
+        return default
+    with open(path, 'r', encoding='utf-8') as f:
+        try:
+            return json.load(f)
+        except:
+            return default
 
-settings=load_settings()
+def save_json(path, data):
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
-state="menu"
+# Загружаем настройки (Сложность)
+game_settings = load_json(SETTINGS_FILE, {"difficulty": "Medium"})
 
-game = RacerGame(screen, settings)
+# --- ЗАГРУЗКА РЕСУРСОВ ---
+def get_asset(name, size, rot=0):
+    path = os.path.join(ASSETS_DIR, name)
+    try:
+        img = pygame.image.load(path).convert_alpha()
+        if rot: img = pygame.transform.rotate(img, rot)
+        return pygame.transform.scale(img, size)
+    except:
+        # Если картинки нет, создаем цветной прямоугольник
+        s = pygame.Surface(size)
+        s.fill((random.randint(50, 200), 0, 0))
+        return s
 
+road_img = get_asset("roadPP.png", (WIDTH, HEIGHT))
+player_img = get_asset("Designer.png", (60, 80), )
+enemy_img = get_asset("enemy.png", (60, 80), 180)
+oil_img = get_asset("oil.png", (40, 40))
+wall_img = get_asset("Block.png", (80, 40))
+nitro_img = get_asset("nitro.png", (30, 40))
+shield_img = get_asset("shield.png", (40, 40))
+repair_img = get_asset("repair.png", (40, 40))
 
-def menu_loop():
-    global state
+# --- ИНТЕРФЕЙСНЫЕ КЛАССЫ ---
+class Button:
+    def __init__(self, text, x, y, w, h, color):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text, self.color = text, color
+    def draw(self, surf):
+        pygame.draw.rect(surf, self.color, self.rect, border_radius=10)
+        t = font.render(self.text, True, WHITE)
+        surf.blit(t, (self.rect.centerx - t.get_width()//2, self.rect.centery - t.get_height()//2))
+    def clicked(self, pos): return self.rect.collidepoint(pos)
 
-    screen.fill((230,230,230))
+def draw_text(text, x, y, color=BLACK, is_big=False):
+    img = (big_font if is_big else font).render(str(text), True, color)
+    screen.blit(img, (x, y))
 
-    draw_center_text(screen,"RACER GAME",80,40)
+# --- ЭКРАНЫ ---
+def show_leaderboard():
+    scores = load_json(LEADERBOARD_FILE, [])
+    # Сортировка по очкам
+    scores = sorted(scores, key=lambda x: x.get('score', 0), reverse=True)[:10]
+    while True:
+        screen.fill(WHITE)
+        draw_text("TOP 10 SCORES", 80, 50, BLACK, True)
+        for i, s in enumerate(scores):
+            txt = f"{i+1}. {s['name']} - {s['score']} ({s['dist']}m)"
+            draw_text(txt, 60, 130 + i*30)
+        btn_back = Button("BACK", 125, 500, 150, 40, GRAY)
+        btn_back.draw(screen)
+        pygame.display.flip()
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if e.type == pygame.MOUSEBUTTONDOWN and btn_back.clicked(e.pos): return
 
-    play_rect = draw_button(screen,"Play",140,180,120,45)
-    leader_rect= draw_button(screen,"Leaderboard",120,250,160,45)
-    settings_rect=draw_button(screen,"Settings",130,320,140,45)
-    quit_rect=draw_button(screen,"Quit",145,390,110,45)
+def input_name():
+    name = ""
+    while True:
+        screen.fill((210, 210, 210))
+        draw_text("Enter Your Name:", 100, 200)
+        draw_text(name + "|", 120, 250, BLUE)
+        draw_text("Press ENTER to Start", 90, 350, GRAY)
+        pygame.display.flip()
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_RETURN and name.strip(): return name
+                elif e.key == pygame.K_BACKSPACE: name = name[:-1]
+                else: 
+                    if len(name) < 10 and e.unicode.isalnum(): name += e.unicode
 
-    mouse=pygame.mouse.get_pos()
-    click=pygame.mouse.get_pressed()[0]
+# --- ИГРОВОЙ ПРОЦЕСС ---
+def game_loop(user_name):
+    # Установка начальной скорости в зависимости от настроек
+    base_spd = {"Easy": 3.0, "Medium": 4.5, "Hard": 6.0}.get(game_settings["difficulty"], 4.5)
+    speed, score, dist = base_spd, 0, 0
+    
+    player = player_img.get_rect(center=(200, 500))
+    enemy = enemy_img.get_rect(center=(random.randint(50, 350), -100))
+    
+    obstacles, boosts = [], []
+    has_shield = False
+    nitro_end, stun_end = 0, 0
+    road_y1, road_y2 = 0, -HEIGHT
 
-    if click:
-        if play_rect.collidepoint(mouse):
-            state="game"
+    running = True
+    while running:
+        now = pygame.time.get_ticks()
+        
+        # Эффекты скорости
+        cur_speed = speed
+        if nitro_end > now: cur_speed *= 1.6
+        if stun_end > now: cur_speed = 0 # Оглушение
+        
+        dist += cur_speed / 10
+        
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: pygame.quit(); sys.exit()
 
-        elif leader_rect.collidepoint(mouse):
-            state="leaderboard"
+        # Управление (не работает во время оглушения)
+        keys = pygame.key.get_pressed()
+        if stun_end < now:
+            if keys[pygame.K_LEFT] and player.left > 0: player.x -= 6
+            if keys[pygame.K_RIGHT] and player.right < WIDTH: player.x += 6
 
-        elif settings_rect.collidepoint(mouse):
-            state="settings"
+        # Логика спавна (учитывает счет для сложности)
+        spawn_chance = max(25, 120 - (score // 10)) 
+        if random.randint(1, spawn_chance) == 1:
+            x = random.randint(50, 350)
+            if abs(x - player.centerx) > 85: # Safe Spawn Logic
+                t = random.choice(['oil', 'wall', 'nitro', 'shield', 'repair'])
+                rect = (oil_img if t=='oil' else wall_img).get_rect(center=(x, -100))
+                if t in ['oil', 'wall']: obstacles.append({'type': t, 'rect': rect})
+                else: boosts.append({'type': t, 'rect': rect})
 
-        elif quit_rect.collidepoint(mouse):
-            pygame.quit()
-            sys.exit()
+        # Вражеский трафик
+        enemy.y += cur_speed + 1.5
+        if enemy.y > HEIGHT:
+            enemy.y, enemy.x = -100, random.randint(70, 300)
+            score += 10 # Очки за обгон
 
+        if player.colliderect(enemy):
+            if has_shield: has_shield = False; enemy.y = -200
+            else: running = False
 
-while True:
+        # Обработка объектов
+        for o in obstacles[:]:
+            o['rect'].y += cur_speed
+            if player.colliderect(o['rect']):
+                if o['type'] == 'wall': stun_end = now + 1500
+                obstacles.remove(o)
+            elif o['rect'].y > HEIGHT: obstacles.remove(o)
 
-    clock.tick(60)
+        for b in boosts[:]:
+            b['rect'].y += cur_speed
+            if player.colliderect(b['rect']):
+                if b['type'] == 'nitro': nitro_end = now + 3000
+                elif b['type'] == 'shield': has_shield = True
+                elif b['type'] == 'repair': obstacles = [o for o in obstacles if o['type'] != 'wall']
+                boosts.remove(b)
+            elif b['rect'].y > HEIGHT: boosts.remove(b)
 
-    for event in pygame.event.get():
+        # Рисование дороги
+        road_y1 += cur_speed; road_y2 += cur_speed
+        if road_y1 >= HEIGHT: road_y1 = -HEIGHT
+        if road_y2 >= HEIGHT: road_y2 = -HEIGHT
+        screen.blit(road_img, (0, road_y1)); screen.blit(road_img, (0, road_y2))
+        
+        for o in obstacles: screen.blit(oil_img if o['type']=='oil' else wall_img, o['rect'])
+        for b in boosts:
+            img = {"nitro": nitro_img, "shield": shield_img, "repair": repair_img}[b['type']]
+            screen.blit(img, b['rect'])
+        
+        screen.blit(player_img, player)
+        if has_shield: pygame.draw.ellipse(screen, BLUE, player.inflate(15,15), 3)
+        screen.blit(enemy_img, enemy)
 
-        if event.type==pygame.QUIT:
-            pygame.quit()
-            sys.exit()
+        # Панель статуса
+        pygame.draw.rect(screen, WHITE, (0, 0, WIDTH, 45))
+        draw_text(f"Score: {score} | Dist: {int(dist)}m", 10, 10)
+        if stun_end > now: draw_text("STUNNED!", 150, 50, RED, True)
+        
+        pygame.display.flip()
+        clock.tick(FPS)
 
-        if state=="game":
-            game.handle_event(event)
+    # Сохранение в лидерборд после выхода из цикла (Game Over)
+    lb = load_json(LEADERBOARD_FILE, [])
+    lb.append({"name": user_name, "score": score, "dist": int(dist)})
+    save_json(LEADERBOARD_FILE, lb)
 
-    if state=="menu":
-        menu_loop()
+def main_menu():
+    # Имя спрашиваем только один раз при запуске
+    name = input_name()
+    while True:
+        screen.fill((240, 240, 240))
+        draw_text(f"Driver: {name}", 20, 20, BLUE)
+        
+        b_play = Button("START GAME", 100, 150, 200, 50, GREEN)
+        b_lead = Button("LEADERBOARD", 100, 230, 200, 50, BLUE)
+        b_quit = Button("QUIT", 100, 310, 200, 50, RED)
+        
+        for b in [b_play, b_lead, b_quit]: b.draw(screen)
+        pygame.display.flip()
+        
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                if b_play.clicked(e.pos): game_loop(name)
+                if b_lead.clicked(e.pos): show_leaderboard()
+                if b_quit.clicked(e.pos): pygame.quit(); sys.exit()
 
-    elif state=="game":
-        result=game.update_draw()
-
-        if result=="gameover":
-            state="gameover"
-
-    elif state=="gameover":
-
-        screen.fill((255,255,255))
-        draw_center_text(screen,"GAME OVER",200,50)
-        draw_center_text(screen,f"Score {game.score}",260,35)
-
-        retry=draw_button(screen,"Retry",145,340,110,45)
-        menu=draw_button(screen,"Menu",145,400,110,45)
-
-        mouse=pygame.mouse.get_pos()
-        click=pygame.mouse.get_pressed()[0]
-
-        if click:
-            if retry.collidepoint(mouse):
-                game.reset()
-                state="game"
-
-            if menu.collidepoint(mouse):
-                game.reset()
-                state="menu"
-
-    elif state=="leaderboard":
-        from persistence import get_scores
-
-        screen.fill((255,255,255))
-
-        draw_center_text(screen,"TOP 10",60,40)
-
-        scores=get_scores()
-
-        y=120
-        for i,s in enumerate(scores):
-            draw_center_text(
-                screen,
-                f"{i+1}. {s['name']} {s['score']}",
-                y,
-                28
-            )
-            y+=35
-
-        back=draw_button(screen,"Back",145,520,110,40)
-
-        if pygame.mouse.get_pressed()[0]:
-            if back.collidepoint(pygame.mouse.get_pos()):
-                state="menu"
-
-    elif state=="settings":
-
-        screen.fill((245,245,245))
-        draw_center_text(screen,"SETTINGS",100,40)
-
-        draw_center_text(
-            screen,
-            f"Difficulty: {settings['difficulty']}",
-            220,
-            30
-        )
-
-        easy=draw_button(screen,"Easy",60,320,90,40)
-        med=draw_button(screen,"Medium",155,320,90,40)
-        hard=draw_button(screen,"Hard",250,320,90,40)
-
-        back=draw_button(screen,"Back",145,430,110,40)
-
-        if pygame.mouse.get_pressed()[0]:
-            m=pygame.mouse.get_pos()
-
-            if easy.collidepoint(m):
-                settings["difficulty"]="easy"
-
-            if med.collidepoint(m):
-                settings["difficulty"]="medium"
-
-            if hard.collidepoint(m):
-                settings["difficulty"]="hard"
-
-            if back.collidepoint(m):
-                state="menu"
-
-    pygame.display.update()
+if __name__ == "__main__":
+    main_menu()

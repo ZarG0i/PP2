@@ -1,109 +1,202 @@
 import pygame
-import json
-import os
-from game import Game
-from db import Database
-from config import WIDTH, HEIGHT, FPS, SETTINGS_FILE
+from game import run_game
+import db
 
 pygame.init()
+
+WIDTH, HEIGHT = 600, 500
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Snake Game - Advanced")
+pygame.display.set_caption("Snake TSIS4")
+
+WHITE = (255,255,255)
+BLACK = (0,0,0)
+GRAY = (200,200,200)
+
+font = pygame.font.SysFont("Arial", 40)
+small_font = pygame.font.SysFont("Arial", 24)
+
 clock = pygame.time.Clock()
-font = pygame.font.SysFont(None, 36)
 
-def load_settings():
-    defaults = {"snake_color": [0, 255, 0], "grid": False, "sound": True}
-    if os.path.exists(SETTINGS_FILE):
-        try:
-            with open(SETTINGS_FILE, 'r') as f:
-                loaded = json.load(f)
-                defaults.update(loaded)
-        except:
-            pass
-    return defaults
 
-def save_settings(settings):
-    with open(SETTINGS_FILE, 'w') as f:
-        json.dump(settings, f, indent=2)
+# ---------------- BUTTON ----------------
+def draw_button(text, x, y, w, h):
+    rect = pygame.Rect(x, y, w, h)
 
-class MainMenu:
-    def __init__(self):
-        self.buttons = [
-            ("Play", 250, 200),
-            ("Leaderboard", 250, 280), 
-            ("Settings", 250, 360),
-            ("Quit", 250, 440)
-        ]
-        self.selected = 0
-        
-    def handle_event(self, event, db, settings):
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                self.selected = (self.selected - 1) % len(self.buttons)
-            elif event.key == pygame.K_DOWN:
-                self.selected = (self.selected + 1) % len(self.buttons)
-            elif event.key == pygame.K_RETURN:
-                return self.buttons[self.selected][0]
-        return None
-    
-    def draw(self, screen, username, personal_best):
-        screen.fill((20, 20, 40))
-        
-        title = font.render("SNAKE GAME", True, (0, 255, 0))
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
-        
-        if username:
-            pb_text = font.render(f"Personal Best: {personal_best}", True, (255, 255, 255))
-            screen.blit(pb_text, (WIDTH//2 - pb_text.get_width()//2, 150))
-        
-        for i, (text, x, y) in enumerate(self.buttons):
-            color = (0, 255, 0) if i == self.selected else (100, 255, 100)
-            surf = font.render(text, True, color)
-            screen.blit(surf, (x, y))
+    color = GRAY if not rect.collidepoint(pygame.mouse.get_pos()) else (170,170,170)
 
-def main():
-    db = Database()
-    settings = load_settings()
-    username = input("Enter username: ")  # Simple console input
-    
-    db.create_player(username)
-    personal_best = db.get_personal_best(username)
-    
-    main_menu = MainMenu()
-    game = None
-    current_screen = "menu"
-    
-    running = True
-    while running:
+    pygame.draw.rect(screen, color, rect)
+    pygame.draw.rect(screen, BLACK, rect, 2)
+
+    label = small_font.render(text, True, BLACK)
+    screen.blit(label, (x + 20, y + 10))
+
+    return rect
+
+
+# ---------------- USERNAME ----------------
+def get_username():
+    name = ""
+
+    while True:
+        screen.fill(WHITE)
+
+        screen.blit(small_font.render("Enter your name:", True, BLACK), (200, 150))
+        screen.blit(font.render(name, True, BLACK), (200, 200))
+
+        pygame.display.flip()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                running = False
-            
-            if current_screen == "menu":
-                result = main_menu.handle_event(event, db, settings)
-                if result == "Play":
-                    game = Game(db, settings, username)
-                    current_screen = "game"
-                elif result == "Quit":
-                    running = False
-            
-            elif current_screen == "game" and game:
-                action = game.handle_event(event)
-                if action == "menu":
-                    current_screen = "menu"
-        
-        screen.fill((0, 0, 0))
-        
-        if current_screen == "menu":
-            main_menu.draw(screen, username, personal_best)
-        elif current_screen == "game" and game:
-            game.update()
-            game.draw(screen)
-        
+                return None
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    return name if name else "Player"
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                else:
+                    name += event.unicode
+
+        clock.tick(60)
+
+
+# ---------------- LEADERBOARD ----------------
+def leaderboard_screen():
+    data = db.get_leaderboard()
+
+    while True:
+        screen.fill(WHITE)
+
+        screen.blit(font.render("LEADERBOARD", True, BLACK), (150, 50))
+
+        y = 120
+        for i, row in enumerate(data):
+            text = f"{i+1}. {row[0]} | {row[1]} | lvl {row[2]}"
+            screen.blit(small_font.render(text, True, BLACK), (100, y))
+            y += 35
+
+        back_btn = draw_button("Back", 220, 420, 160, 50)
+
         pygame.display.flip()
-        clock.tick(FPS)
-    
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "quit"
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_btn.collidepoint(event.pos):
+                    return "menu"
+
+        clock.tick(60)
+
+
+# ---------------- MENU ----------------
+def main_menu():
+    while True:
+        screen.fill(WHITE)
+
+        screen.blit(font.render("SNAKE GAME", True, BLACK), (150, 80))
+
+        play_btn = draw_button("Play", 220, 200, 160, 50)
+        board_btn = draw_button("Leaderboard", 220, 270, 160, 50)
+        quit_btn = draw_button("Quit", 220, 340, 160, 50)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "quit"
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_btn.collidepoint(event.pos):
+                    return "play"
+                if board_btn.collidepoint(event.pos):
+                    return "leaderboard"
+                if quit_btn.collidepoint(event.pos):
+                    return "quit"
+
+        clock.tick(60)
+
+
+# ---------------- GAME OVER ----------------
+def game_over_screen(score, level):
+    while True:
+        screen.fill(WHITE)
+
+        screen.blit(font.render("GAME OVER", True, BLACK), (160, 120))
+        screen.blit(small_font.render(f"Score: {score}", True, BLACK), (220, 200))
+        screen.blit(small_font.render(f"Level: {level}", True, BLACK), (220, 240))
+
+        retry_btn = draw_button("Retry", 220, 300, 160, 50)
+        menu_btn = draw_button("Menu", 220, 360, 160, 50)
+
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return "quit"
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if retry_btn.collidepoint(event.pos):
+                    return "retry"
+                if menu_btn.collidepoint(event.pos):
+                    return "menu"
+
+        clock.tick(60)
+
+
+# ---------------- MAIN LOOP ----------------
+def main():
+    db.create_tables()
+
+    state = "menu"
+
+    while True:
+
+        if state == "menu":
+            result = main_menu()
+
+            if result == "play":
+                state = "play"
+            elif result == "leaderboard":
+                state = "leaderboard"
+            elif result == "quit":
+                break
+
+        elif state == "leaderboard":
+            result = leaderboard_screen()
+
+            if result == "menu":
+                state = "menu"
+            elif result == "quit":
+                break
+
+        elif state == "play":
+            username = get_username()
+            if username is None:
+                break
+
+            result = run_game(screen, username, db)
+
+            if result == "quit":
+                break
+
+            elif result[0] == "game_over":
+                score, level = result[1], result[2]
+                state = "game_over"
+
+        elif state == "game_over":
+            result = game_over_screen(score, level)
+
+            if result == "retry":
+                state = "play"
+            elif result == "menu":
+                state = "menu"
+            elif result == "quit":
+                break
+
     pygame.quit()
+
 
 if __name__ == "__main__":
     main()

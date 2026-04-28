@@ -1,188 +1,340 @@
 import pygame
 import random
+import os
+import json
+import sys
 
-from persistence import save_score
+# =========================
+# 🔒 ЖЁСТКАЯ ФИКСАЦИЯ ПАПКИ ПРОЕКТА
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
 
-class RacerGame:
+ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+LEADERBOARD_FILE = os.path.join(BASE_DIR, "leaderboard.json")
+SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 
-    def __init__(self,screen,settings):
+# =========================
+# 🔧 PYGAME INIT
+# =========================
+pygame.init()
+WIDTH, HEIGHT = 400, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Racer Pro: TSIS3 Fixed Paths")
 
-        self.screen=screen
-        self.settings=settings
+clock = pygame.time.Clock()
+FPS = 60
 
-        self.width=400
-        self.height=600
+RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+BLACK, WHITE, GRAY = (0, 0, 0), (255, 255, 255), (150, 150, 150)
 
-        self.font=pygame.font.SysFont("Arial",20)
+font = pygame.font.SysFont("Verdana", 20)
+big_font = pygame.font.SysFont("Verdana", 40)
 
-        self.load_assets()
+# =========================
+# 📦 JSON SYSTEM
+# =========================
+def load_json(path, default):
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(default, f, indent=4)
+        return default
 
-        self.reset()
-
-
-    def load_assets(self):
-
-        self.player_img=pygame.image.load(
-            "C:/Users/ZANGAR/Desktop/PP2/TSIS/TSIS3/assets/Designer.png"
-        ).convert_alpha()
-
-        self.player_img=pygame.transform.scale(
-            self.player_img,(50,80)
-        )
-
-        self.enemy_img=pygame.image.load(
-            "C:/Users/ZANGAR/Desktop/PP2/TSIS/TSIS3/assets/enemy.png"
-        ).convert_alpha()
-
-        self.enemy_img=pygame.transform.scale(
-            self.enemy_img,(50,80)
-        )
-
-        self.enemy_img=pygame.transform.rotate(
-            self.enemy_img,180
-        )
-
-        self.road=pygame.image.load(
-            "C:/Users/ZANGAR/Desktop/PP2/TSIS/TSIS3/assets/roadPP.png"
-        ).convert()
-
-        self.road=pygame.transform.scale(
-            self.road,(400,600)
-        )
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return default
 
 
-    def reset(self):
-
-        self.player=self.player_img.get_rect()
-        self.player.x=180
-        self.player.y=500
-
-        self.enemy=self.enemy_img.get_rect()
-        self.enemy.x=random.randint(40,350)
-        self.enemy.y=-100
-
-        self.speed=5
-        self.score=0
-        self.distance=0
-        self.game_over=False
-
-        self.coins=[]
-
-        for _ in range(5):
-            self.spawn_coin()
-
-        self.road_y1=0
-        self.road_y2=-600
+def save_json(path, data):
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 
-    def spawn_coin(self):
+game_settings = load_json(SETTINGS_FILE, {"difficulty": "Medium"})
 
-        value=random.randint(1,3)
-        radius=[8,12,16][value-1]
-
-        self.coins.append({
-            "rect":pygame.Rect(
-                random.randint(40,350),
-                random.randint(-600,0),
-                radius*2,
-                radius*2
-            ),
-            "value":value,
-            "radius":radius
-        })
-
-
-    def handle_event(self,event):
-        pass
+# =========================
+# 🖼️ ASSETS LOADER
+# =========================
+def get_asset(name, size, rot=0):
+    path = os.path.join(ASSETS_DIR, name)
+    try:
+        img = pygame.image.load(path).convert_alpha()
+        if rot:
+            img = pygame.transform.rotate(img, rot)
+        return pygame.transform.scale(img, size)
+    except:
+        s = pygame.Surface(size)
+        s.fill((random.randint(50, 200), 0, 0))
+        return s
 
 
-    def update_draw(self):
+road_img = get_asset("road1.png", (WIDTH, HEIGHT))
+player_img = get_asset("main.jpg", (60, 80), 90)
+enemy_img = get_asset("main.jpg", (80, 60), 270)
+oil_img = get_asset("oil.png", (40, 40))
+wall_img = get_asset("wall.png", (80, 40))
+nitro_img = get_asset("nitro.png", (30, 40))
+shield_img = get_asset("shield.png", (40, 40))
+repair_img = get_asset("repair.png", (40, 40))
 
-        if self.game_over:
-            return "gameover"
-
-        keys=pygame.key.get_pressed()
-
-        if keys[pygame.K_LEFT]:
-            self.player.x-=5
-
-        if keys[pygame.K_RIGHT]:
-            self.player.x+=5
-
-
-        self.road_y1+=self.speed
-        self.road_y2+=self.speed
-
-        if self.road_y1>=600:
-            self.road_y1=-600
-
-        if self.road_y2>=600:
-            self.road_y2=-600
-
-
-        self.enemy.y+=self.speed
-
-        if self.enemy.y>600:
-            self.enemy.y=-100
-            self.enemy.x=random.randint(40,350)
-
-
-        if self.player.colliderect(self.enemy):
-            save_score("Player",self.score,self.distance)
-            self.game_over=True
-
-
-        for c in self.coins:
-
-            c["rect"].y+=self.speed
-
-            if c["rect"].y>600:
-                c["rect"].y=random.randint(-600,0)
-
-            if self.player.colliderect(c["rect"]):
-                self.score+=c["value"]
-                c["rect"].y=random.randint(-600,0)
-
-
-        self.distance+=0.2*self.speed
-
-        self.draw()
-
-        return None
-
+# =========================
+# 🎮 UI
+# =========================
+class Button:
+    def __init__(self, text, x, y, w, h, color):
+        self.rect = pygame.Rect(x, y, w, h)
+        self.text = text
+        self.color = color
 
     def draw(self):
-
-        self.screen.blit(self.road,(0,self.road_y1))
-        self.screen.blit(self.road,(0,self.road_y2))
-
-        self.screen.blit(self.player_img,self.player)
-        self.screen.blit(self.enemy_img,self.enemy)
-
-        for c in self.coins:
-
-            color=[
-                (255,255,0),
-                (255,165,0),
-                (255,0,255)
-            ][c["value"]-1]
-
-            pygame.draw.circle(
-                self.screen,
-                color,
-                c["rect"].center,
-                c["radius"]
-            )
-
-        t1=self.font.render(
-            f"Coins:{self.score}",
-            True,(0,0,0)
+        pygame.draw.rect(screen, self.color, self.rect, border_radius=10)
+        t = font.render(self.text, True, WHITE)
+        screen.blit(
+            t,
+            (
+                self.rect.centerx - t.get_width() // 2,
+                self.rect.centery - t.get_height() // 2,
+            ),
         )
 
-        t2=self.font.render(
-            f"Distance:{int(self.distance)}",
-            True,(0,0,0)
-        )
+    def clicked(self, pos):
+        return self.rect.collidepoint(pos)
 
-        self.screen.blit(t1,(10,10))
-        self.screen.blit(t2,(10,35))
+
+def draw_text(text, x, y, color=BLACK, big=False):
+    f = big_font if big else font
+    img = f.render(str(text), True, color)
+    screen.blit(img, (x, y))
+
+# =========================
+# 🏆 LEADERBOARD
+# =========================
+def show_leaderboard():
+    while True:
+        screen.fill(WHITE)
+        data = load_json(LEADERBOARD_FILE, [])
+        data = sorted(data, key=lambda x: x["score"], reverse=True)[:10]
+
+        draw_text("TOP 10", 150, 50, BLACK, True)
+
+        y = 130
+        for i, d in enumerate(data):
+            draw_text(f"{i+1}. {d['name']} {d['score']} ({d['dist']}m)", 80, y)
+            y += 30
+
+        back = Button("BACK", 125, 500, 150, 40, GRAY)
+        back.draw()
+
+        pygame.display.flip()
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                if back.clicked(e.pos):
+                    return
+
+# =========================
+# 👤 NAME INPUT
+# =========================
+def input_name():
+    name = ""
+    while True:
+        screen.fill((220, 220, 220))
+        draw_text("ENTER NAME:", 120, 200)
+        draw_text(name + "|", 140, 260, BLUE)
+        draw_text("ENTER to start", 120, 350, GRAY)
+
+        pygame.display.flip()
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_RETURN and name.strip():
+                    return name
+                elif e.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                elif e.unicode.isalnum() and len(name) < 10:
+                    name += e.unicode
+
+# =========================
+# 🚗 GAME
+# =========================
+def game_loop(name):
+    base_speed = {"Easy": 3, "Medium": 4.5, "Hard": 6}.get(
+        game_settings["difficulty"], 4.5
+    )
+
+    speed = base_speed
+    score = 0
+    dist = 0
+
+    player = player_img.get_rect(center=(200, 500))
+    enemy = enemy_img.get_rect(center=(200, -100))
+
+    obstacles = []
+    boosts = []
+
+    nitro_end = 0
+    stun_end = 0
+    shield = False
+
+    road_y1 = 0
+    road_y2 = -HEIGHT
+
+    running = True
+
+    while running:
+        now = pygame.time.get_ticks()
+
+        # SPEED
+        cur_speed = speed
+        if nitro_end > now:
+            cur_speed *= 1.6
+        if stun_end > now:
+            cur_speed = 0
+
+        dist += cur_speed / 10
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # CONTROL
+        keys = pygame.key.get_pressed()
+        if stun_end < now:
+            if keys[pygame.K_LEFT]:
+                player.x -= 5
+            if keys[pygame.K_RIGHT]:
+                player.x += 5
+
+        # SPAWN
+        if random.randint(1, 60) == 1:
+            x = random.randint(50, 350)
+            t = random.choice(["oil", "wall", "nitro", "shield", "repair"])
+
+            if t in ["oil", "wall"]:
+                rect = (oil_img if t == "oil" else wall_img).get_rect(center=(x, -50))
+                obstacles.append({"type": t, "rect": rect})
+            else:
+                rect = nitro_img.get_rect(center=(x, -50))
+                boosts.append({"type": t, "rect": rect})
+
+        # ENEMY
+        enemy.y += cur_speed + 1.5
+        if enemy.y > HEIGHT:
+            enemy.y = -100
+            enemy.x = random.randint(50, 350)
+            score += 10
+
+        if player.colliderect(enemy):
+            if shield:
+                shield = False
+                enemy.y = -200
+            else:
+                running = False
+
+        # OBSTACLES
+        for o in obstacles[:]:
+            o["rect"].y += cur_speed
+
+            if player.colliderect(o["rect"]):
+                if o["type"] == "wall":
+                    stun_end = now + 3000
+                obstacles.remove(o)
+
+            elif o["rect"].y > HEIGHT:
+                obstacles.remove(o)
+
+        # BOOSTS
+        for b in boosts[:]:
+            b["rect"].y += cur_speed
+
+            if player.colliderect(b["rect"]):
+                if b["type"] == "nitro":
+                    nitro_end = now + 3000
+                elif b["type"] == "shield":
+                    shield = True
+                elif b["type"] == "repair":
+                    obstacles = [o for o in obstacles if o["type"] != "wall"]
+
+                boosts.remove(b)
+
+        # DRAW
+        road_y1 += cur_speed
+        road_y2 += cur_speed
+
+        if road_y1 > HEIGHT:
+            road_y1 = -HEIGHT
+        if road_y2 > HEIGHT:
+            road_y2 = -HEIGHT
+
+        screen.blit(road_img, (0, road_y1))
+        screen.blit(road_img, (0, road_y2))
+
+        for o in obstacles:
+            screen.blit(oil_img if o["type"] == "oil" else wall_img, o["rect"])
+
+        for b in boosts:
+            img = {"nitro": nitro_img, "shield": shield_img, "repair": repair_img}[b["type"]]
+            screen.blit(img, b["rect"])
+
+        screen.blit(player_img, player)
+        screen.blit(enemy_img, enemy)
+
+        draw_text(f"Score: {score}", 10, 10)
+        draw_text(f"Dist: {int(dist)}", 10, 35)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    # SAVE SCORE
+    lb = load_json(LEADERBOARD_FILE, [])
+    lb.append({"name": name, "score": score, "dist": int(dist)})
+    save_json(LEADERBOARD_FILE, lb)
+
+# =========================
+# 🎮 MENU
+# =========================
+def menu():
+    name = input_name()
+
+    while True:
+        screen.fill((240, 240, 240))
+
+        draw_text(f"Player: {name}", 20, 20, BLUE)
+
+        play = Button("PLAY", 100, 150, 200, 50, GREEN)
+        lead = Button("LEADERBOARD", 100, 230, 200, 50, BLUE)
+        quitb = Button("QUIT", 100, 310, 200, 50, RED)
+
+        play.draw()
+        lead.draw()
+        quitb.draw()
+
+        pygame.display.flip()
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if e.type == pygame.MOUSEBUTTONDOWN:
+                if play.clicked(e.pos):
+                    game_loop(name)
+                if lead.clicked(e.pos):
+                    show_leaderboard()
+                if quitb.clicked(e.pos):
+                    pygame.quit()
+                    sys.exit()
+
+
+if __name__ == "__main__":
+    menu()
