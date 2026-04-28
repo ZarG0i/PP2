@@ -25,7 +25,7 @@ clock = pygame.time.Clock()
 FPS = 60
 
 # Цвета и шрифты
-RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+RED, GREEN, BLUE = (255, 0, 0), (0, 200, 0), (0, 0, 190)
 BLACK, WHITE, GRAY = (0, 0, 0), (255, 255, 255), (150, 150, 150)
 font = pygame.font.SysFont("Verdana", 20)
 big_font = pygame.font.SysFont("Verdana", 40)
@@ -66,12 +66,12 @@ road_img = get_asset("roadPP.png", (WIDTH, HEIGHT))
 player_img = get_asset("Designer.png", (60, 80), )
 enemy_img = get_asset("enemy.png", (60, 80), 180)
 oil_img = get_asset("oil.png", (40, 40))
-wall_img = get_asset("Block.png", (80, 40))
+wall_img = get_asset("block.png", (80, 40))
 nitro_img = get_asset("nitro.png", (30, 40))
 shield_img = get_asset("shield.png", (40, 40))
 repair_img = get_asset("repair.png", (40, 40))
 
-# --- ИНТЕРФЕЙСНЫЕ КЛАССЫ ---
+
 class Button:
     def __init__(self, text, x, y, w, h, color):
         self.rect = pygame.Rect(x, y, w, h)
@@ -86,14 +86,13 @@ def draw_text(text, x, y, color=BLACK, is_big=False):
     img = (big_font if is_big else font).render(str(text), True, color)
     screen.blit(img, (x, y))
 
-# --- ЭКРАНЫ ---
 def show_leaderboard():
     scores = load_json(LEADERBOARD_FILE, [])
     # Сортировка по очкам
     scores = sorted(scores, key=lambda x: x.get('score', 0), reverse=True)[:10]
     while True:
         screen.fill(WHITE)
-        draw_text("TOP 10 SCORES", 80, 50, BLACK, True)
+        draw_text("TOP 10 SCORES", 60, 50, BLACK, True)
         for i, s in enumerate(scores):
             txt = f"{i+1}. {s['name']} - {s['score']} ({s['dist']}m)"
             draw_text(txt, 60, 130 + i*30)

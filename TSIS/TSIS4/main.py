@@ -11,6 +11,7 @@ pygame.display.set_caption("Snake TSIS4")
 WHITE = (255,255,255)
 BLACK = (0,0,0)
 GRAY = (200,200,200)
+WHITE_PURPLE = (230, 230, 250) 
 
 font = pygame.font.SysFont("Arial", 40)
 small_font = pygame.font.SysFont("Arial", 24)
@@ -95,7 +96,7 @@ def main_menu():
     while True:
         screen.fill(WHITE)
 
-        screen.blit(font.render("SNAKE GAME", True, BLACK), (150, 80))
+        screen.blit(font.render("SNAKE GAME", True, BLACK), (190, 80))
 
         play_btn = draw_button("Play", 220, 200, 160, 50)
         board_btn = draw_button("Leaderboard", 220, 270, 160, 50)
@@ -124,8 +125,8 @@ def game_over_screen(score, level):
         screen.fill(WHITE)
 
         screen.blit(font.render("GAME OVER", True, BLACK), (160, 120))
-        screen.blit(small_font.render(f"Score: {score}", True, BLACK), (220, 200))
-        screen.blit(small_font.render(f"Level: {level}", True, BLACK), (220, 240))
+        screen.blit(small_font.render(f"Score: {score}", True, WHITE), (220, 200))
+        screen.blit(small_font.render(f"Level: {level}", True, WHITE), (220, 240))
 
         retry_btn = draw_button("Retry", 220, 300, 160, 50)
         menu_btn = draw_button("Menu", 220, 360, 160, 50)

@@ -25,7 +25,7 @@ pygame.display.set_caption("Racer Pro: TSIS3 Fixed Paths")
 clock = pygame.time.Clock()
 FPS = 60
 
-RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
+RED, GREEN, BLUE = (255, 0, 0), (0, 200, 0), (0, 0, 190)
 BLACK, WHITE, GRAY = (0, 0, 0), (255, 255, 255), (150, 150, 150)
 
 font = pygame.font.SysFont("Verdana", 20)
@@ -70,11 +70,11 @@ def get_asset(name, size, rot=0):
         return s
 
 
-road_img = get_asset("road1.png", (WIDTH, HEIGHT))
-player_img = get_asset("main.jpg", (60, 80), 90)
-enemy_img = get_asset("main.jpg", (80, 60), 270)
+road_img = get_asset("roadPP.png", (WIDTH, HEIGHT))
+player_img = get_asset("Designer.png", (60, 80),)
+enemy_img = get_asset("enemy.png", (60, 80), 180)
 oil_img = get_asset("oil.png", (40, 40))
-wall_img = get_asset("wall.png", (80, 40))
+wall_img = get_asset("block.png", (80, 40))
 nitro_img = get_asset("nitro.png", (30, 40))
 shield_img = get_asset("shield.png", (40, 40))
 repair_img = get_asset("repair.png", (40, 40))

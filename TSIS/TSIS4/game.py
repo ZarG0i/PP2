@@ -238,8 +238,8 @@ def run_game(screen, username, db):
                 2
             )
 
-        screen.blit(font.render(f"Score: {score}", True, BLACK), (5,5))
-        screen.blit(font.render(f"Level: {level}", True, BLACK), (5,25))
+        screen.blit(font.render(f"Score: {score}", True, WHITE), (5,5))
+        screen.blit(font.render(f"Level: {level}", True, WHITE), (5,25))
 
         pygame.display.flip()
         clock.tick(current_speed)
